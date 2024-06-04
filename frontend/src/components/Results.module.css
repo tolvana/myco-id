@@ -17,6 +17,9 @@
   text-align: left; /* Aligns the text to the left */
   font-size: 16px;
   font-weight: bold;
+  display: flex;
+  align-items: center; /* Aligns items vertically */
+  justify-content: space-between; /* Creates space between items */
 }
 
 .progressBar {
@@ -48,4 +51,31 @@
 .scientificName {
   font-style: italic;
   font-weight: normal; /* Ensure the scientific name is not bold */
+}
+
+.resultsContainer {
+  /* Container styles */
+}
+
+.nameAndIconsContainer {
+  display: flex;
+  align-items: center; /* Align items at the same level */
+}
+
+.icon {
+  height: 48px;
+  width: auto; /* Standard icon size */
+  display: inline-block;
+  margin-left: 8px;
+  color: #777; /* Icon color, customize as needed */
+}
+
+.icon:hover {
+  color: #000; /* Icon hover effect */
+}
+
+.icons {
+  display: flex;
+  align-items: center; /* Align items vertically */
+  justify-content: end; /* Aligns items to the end of the grid container (right) */
 }

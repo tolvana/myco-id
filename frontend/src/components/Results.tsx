@@ -8,6 +8,37 @@ type ResultsProps = {
   results: [string, any][];
 };
 
+
+// Component for showing gbif media of this species
+const GbifObservations: React.FC<{ gbifId: string }> = ({ gbifId }) => {
+    const [mediaResults, setMediaResults] = useState<any[]>([]);
+
+    useEffect(() => {
+        fetch(`https://api.gbif.org/v1/species/${gbifId}/media`)
+            .then((response) => response.json())
+            .then((data) => {
+                setMediaResults(data.results);
+            }
+        );
+    }
+    , [gbifId]);
+
+    return (
+        <div className={styles.gbifObservations}>
+            {mediaResults.map((result) => (
+                // rescale to thumbnail size. click to open full size
+                <img
+                    key={result.identifier}
+                    src={result.identifier}
+                    alt={result.title}
+                    onClick={() => window.open(result.identifier)}
+                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                />
+            ))}
+        </div>
+    );
+};
+
 const Results: React.FC<ResultsProps> = ({ results }) => {
   return (
     <div className={styles.mainContainer}>
@@ -34,7 +65,6 @@ const Results: React.FC<ResultsProps> = ({ results }) => {
                 )}
               </div>
 
-              {/* Aligning the icons to the right */}
               <div className={styles.icons}>
                 <a href={wikiUrl} target="_blank" rel="noopener noreferrer" className={styles.icon}>
                   <WikipediaIcon />
@@ -49,6 +79,7 @@ const Results: React.FC<ResultsProps> = ({ results }) => {
                 {`${(probability * 100).toFixed(1)}%`}
               </div>
             </div>
+            <GbifObservations gbifId={gbifId} />
           </div>
         );
       })}

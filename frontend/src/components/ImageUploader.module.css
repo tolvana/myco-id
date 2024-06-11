@@ -1,14 +1,15 @@
 .centerDiv {
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
 .customFileInput {
-    width: 50% !important;  /* Adjust width as needed */
+    width: 100% !important;  /* Adjust width as needed */
 }
 
 .urlInput {
-    width: 50% !important;
+    width: 100% !important;
 }
 
 .spinner {
@@ -54,7 +55,6 @@
 
 .progressBar {
   width: 100%;
-  max-width: 50%; /* Ensures the progress bar doesn't exceed half the parent's width */
   background-color: #e0e0e0;
   border-radius: 8px;
   overflow: hidden;

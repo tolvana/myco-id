@@ -6,7 +6,11 @@ import { ToastContainer, toast } from 'react-toastify';  // Import toastify comp
 import 'react-toastify/dist/ReactToastify.css';  // Default styling
 
 
-const ImageUploader: React.FC = () => {
+interface ImageUploaderProps {
+    containerWidth: string;
+}
+
+const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [classificationResults, setClassificationResults] = useState<Record<string, any> | null>(null);
@@ -93,13 +97,16 @@ const ImageUploader: React.FC = () => {
 
     const results = classificationResults ? Object.entries(classificationResults) : [];
 
+    const containerStyle = { width: containerWidth, maxWidth: '768px'};
+    console.log(containerStyle);
+
     return (
     <>
             <ToastContainer position="top-center" autoClose={4000} hideProgressBar={true}
                             newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss
                             draggable pauseOnHover toastClassName={styles.toastCustom} />
 
-        <div className="container mt-4">
+        <div className="container mt-4" style={containerStyle}>
             <form onSubmit={onSubmit}>
                 <div className="mb-3">
 

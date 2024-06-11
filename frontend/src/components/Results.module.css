@@ -1,6 +1,5 @@
 /* styles.module.css */
 .mainContainer {
-  width: 50%; /* Takes up 50% of the parent width */
   margin: 0 auto; /* Centers the container horizontally */
   padding-top: 20px; /* Adds space to the top */
   display: flex;

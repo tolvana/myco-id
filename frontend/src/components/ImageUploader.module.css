@@ -93,6 +93,7 @@
 
 .roundedImage {
     border-radius: 10px;
+    width: 100%;
 }
 
 /* In your ImageUploader.module.css or a separate CSS file */

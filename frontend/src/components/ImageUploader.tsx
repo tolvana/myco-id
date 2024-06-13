@@ -163,7 +163,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
                 </div>
                 {preview && (
                     <div className="mb-3">
-                        <img src={preview} alt="No image found." className={styles.roundedImage} style={{ maxWidth: "100%", maxHeight: "300px" }} />
+                        <img src={preview} alt="No image found." className={styles.roundedImage} />
                     </div>
                 )}
                 {file || imageUrl ? (

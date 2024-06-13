@@ -70,14 +70,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
         }
 
         setLoading(true);
-        let data;
+        let data = new FormData();
         if (file) {
-            data = new FormData();
             data.append('file', file);
-
         } else if (imageUrl)
-            data = { url: imageUrl };
-
+            data.append('url', imageUrl);
         try {
             const response = await axios.post('http://192.168.1.98:5000/classify', data, {
                 headers: {

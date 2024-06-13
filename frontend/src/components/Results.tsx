@@ -18,21 +18,25 @@ const GbifObservations: React.FC<{ gbifId: string }> = ({ gbifId }) => {
             .then((response) => response.json())
             .then((data) => {
                 setMediaResults(data.results);
-            }
-        );
-    }
-    , [gbifId]);
+            });
+    }, [gbifId]);
+
+    // Adjust number of images per row and maximum rows as needed
+    const imagesPerRow = 4; // Number of images per row
+    const maxRows = 3; // Maximum number of rows to display
+
+    // Calculate number of columns dynamically based on images per row
+    const gridTemplateColumns = `repeat(${imagesPerRow}, 1fr)`;
 
     return (
-        <div className={styles.gbifObservations}>
-            {mediaResults.map((result) => (
-                // rescale to thumbnail size. click to open full size
+        <div className={styles.gbifObservations} style={{gridTemplateColumns}}>
+            {mediaResults.slice(0, imagesPerRow * maxRows).map((result) => (
                 <img
                     key={result.identifier}
                     src={result.identifier}
                     alt={result.title}
                     onClick={() => window.open(result.identifier)}
-                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                    className={styles.thumbnail}
                 />
             ))}
         </div>

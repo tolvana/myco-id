@@ -27,6 +27,7 @@
   background-color: #e0e0de;
   border-radius: 4px;
   overflow: hidden;
+  margin-bottom: 10px; /* Space between progress bars */
 }
 
 /* styles.module.css */
@@ -77,4 +78,20 @@
   display: flex;
   align-items: center; /* Align items vertically */
   justify-content: end; /* Aligns items to the end of the grid container (right) */
+}
+
+.gbifObservations {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(100px, 1fr)); /* Adjust 100px to your thumbnail size */
+    gap: 8px; /* Margin between thumbnails */
+    justify-items: center; /* Center items horizontally */
+}
+
+.thumbnail {
+    width: 100%; /* Ensure thumbnails fill their grid cell */
+    height: auto; /* Ensure thumbnails maintain aspect ratio */
+    aspect-ratio: 1 / 1; /* Maintain aspect ratio */
+    object-fit: cover; /* Maintain image aspect ratio and crop as needed */
+    cursor: pointer; /* Make thumbnails clickable */
+    border-radius: 4px; /* Rounded corners for thumbnails */
 }

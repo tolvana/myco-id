@@ -17,15 +17,13 @@ from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
 import torch
-from torch import Tensor
 
 from torchvision.transforms import functional as F, InterpolationMode
+from torch import Tensor
 
 import matplotlib.pyplot as plt
-import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch import Tensor
 
 
 from torch.utils.data import Dataset, DataLoader

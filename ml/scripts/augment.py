@@ -1,7 +1,6 @@
 import os
 import argparse
 import sys
-import requests
 import pathlib
 from typing import Optional, Callable
 import json

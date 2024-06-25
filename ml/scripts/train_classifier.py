@@ -172,6 +172,18 @@ if __name__ == "__main__":
     t0 = time.time()
     try:
         for epoch in range(num_epochs):
+            if epoch < 10:
+                # Freeze all layers except model.classifier[1]
+                for name, param in model.named_parameters():
+                    if 'classifier.1' not in name:  # Exclude model.classifier[1]
+                        param.requires_grad = False
+                    else:
+                        print("unfreezing", name)
+                        param.requires_grad = True
+            else:
+                # Unfreeze all layers
+                for param in model.parameters():
+                    param.requires_grad = True
             # Training Step
             model.train()
             for i, data in enumerate(train_loader):

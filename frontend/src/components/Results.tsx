@@ -1,94 +1,149 @@
 import React, { useEffect, useState } from 'react';
-import styles from './Results.module.css';
-import WikipediaIcon from '../icons/wikipedia';
-import GbifIcon from '../icons/gbif';
+import {
+  Grid,
+  Typography,
+  Box,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
+import WikipediaIcon from '../icons/wikipedia'; // Assuming these are custom icons
+import GbifIcon from '../icons/gbif'; // Assuming these are custom icons
+import { styled } from '@mui/material/styles';
 
 // Props type definition
 type ResultsProps = {
   results: [string, any][];
 };
 
-
 // Component for showing gbif media of this species
 const GbifObservations: React.FC<{ gbifId: string }> = ({ gbifId }) => {
-    const [mediaResults, setMediaResults] = useState<any[]>([]);
+  const [mediaResults, setMediaResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-    useEffect(() => {
-        fetch(`https://api.gbif.org/v1/species/${gbifId}/media`)
-            .then((response) => response.json())
-            .then((data) => {
-                setMediaResults(data.results);
-            });
-    }, [gbifId]);
+  useEffect(() => {
+    fetch(`https://api.gbif.org/v1/species/${gbifId}/media`)
+      .then((response) => response.json())
+      .then((data) => {
+        setMediaResults(data.results);
+        setLoading(false);
+      });
+  }, [gbifId]);
 
-    // Adjust number of images per row and maximum rows as needed
-    const imagesPerRow = 4; // Number of images per row
-    const maxRows = 3; // Maximum number of rows to display
+  const imagesPerRow = 4; // Number of images per row
+  const maxRows = 1; // Maximum number of rows to display
 
-    // Calculate number of columns dynamically based on images per row
-    const gridTemplateColumns = `repeat(${imagesPerRow}, 1fr)`;
-
-    return (
-        <div className={styles.gbifObservations} style={{gridTemplateColumns}}>
-            {mediaResults.slice(0, imagesPerRow * maxRows).map((result) => (
-                <img
-                    key={result.identifier}
-                    src={result.identifier}
-                    alt={result.title}
-                    onClick={() => window.open(result.identifier)}
-                    className={styles.thumbnail}
-                />
-            ))}
-        </div>
-    );
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${imagesPerRow}, 1fr)`,
+        gap: 1, // Ensure equal spacing
+      }}
+    >
+      {loading ? (
+        <CircularProgress />
+      ) : (
+        mediaResults.slice(0, imagesPerRow * maxRows).map((result) => (
+          <Box
+            key={result.identifier}
+            component="img"
+            src={result.identifier}
+            alt={result.title}
+            onClick={() => window.open(result.identifier)}
+            sx={{
+              width: '100%', // Use 100% to fit within the grid cell
+              height: 'auto', // Standard height
+              aspectRatio: 1 / 1, // Square aspect ratio
+              objectFit: 'cover', // Crop to square
+              borderRadius: 1, // Rounded corners
+              cursor: 'pointer',
+              '&:hover': {
+                opacity: 0.8,
+              },
+            }}
+          />
+        ))
+      )}
+    </Box>
+  );
 };
+
+const ResultsContainer = styled(Box)(({ theme }) => ({
+  marginTop: theme.spacing(4),
+}));
+
+const ResultEntry = styled(Box)(({ theme }) => ({
+  marginBottom: theme.spacing(2),
+  padding: theme.spacing(2),
+  borderRadius: "8px",
+  backgroundColor: "#222",
+  boxShadow: theme.shadows[2],
+}));
 
 const Results: React.FC<ResultsProps> = ({ results }) => {
   console.log(results);
   return (
-    <div className={styles.mainContainer}>
+    <ResultsContainer>
       {results.map(([scientificName, { probability, info }]) => {
-
-        const normalizedName = scientificName.replace(" ", "_");
+        const normalizedName = scientificName.replace(' ', '_');
         const gbifId = info.gbif_id;
         const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(normalizedName)}`;
         const gbifUrl = `https://www.gbif.org/species/${encodeURIComponent(gbifId)}`;
 
         return (
-          <div key={scientificName} className={styles.resultEntry}>
-            <div className={styles.resultLabel}>
-              <div className={styles.textContainer}>
-                {info.common_names.eng ? (
-                  <>
-                    <span className={styles.vernacularName}>{info.common_names["eng"][0]}</span>
-                    <span> (</span>
-                    <span className={styles.scientificName}>{info.scientific_name}</span>
-                    <span>)</span>
-                  </>
-                ) : (
-                  <span className={styles.scientificName}>{info.scientific_name}</span>
-                )}
-              </div>
+          <ResultEntry key={scientificName}>
+            <Grid container alignItems="center" spacing={2}>
+              <Grid item xs>
+                <Box>
+                  {info.common_names.eng ? (
+                    <>
+                    <div>
+                      <Typography variant="h6" component="span">
+                        {info.common_names['eng'][0]}
+                      </Typography>
+                    </div>
 
-              <div className={styles.icons}>
-                <a href={wikiUrl} target="_blank" rel="noopener noreferrer" className={styles.icon}>
+                    <div>
+                      <Typography variant="body2" component="span">
+                        {' '}
+                        {info.scientific_name}
+                      </Typography>
+                    </div>
+                    </>
+                  ) : (
+                    <Typography variant="h6" component="span">
+                      {info.scientific_name}
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
+              <Grid item>
+                <IconButton
+                  component="a"
+                  href={wikiUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <WikipediaIcon />
-                </a>
-                <a href={gbifUrl} target="_blank" rel="noopener noreferrer" className={styles.icon}>
+                </IconButton>
+                <IconButton
+                  component="a"
+                  href={gbifUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <GbifIcon />
-                </a>
-              </div>
-            </div>
-            <div className={styles.progressBar}>
-              <div className={styles.progressBarFill} style={{ width: `${probability * 100}%` }}>
-                {`${(probability * 100).toFixed(1)}%`}
-              </div>
-            </div>
+                </IconButton>
+              </Grid>
+              <Grid item>
+                <Typography variant="body2">{`${(probability * 100).toFixed(1)}%`}</Typography>
+              </Grid>
+            </Grid>
             <GbifObservations gbifId={gbifId} />
-          </div>
+          </ResultEntry>
         );
       })}
-    </div>
+    </ResultsContainer>
   );
 };
 

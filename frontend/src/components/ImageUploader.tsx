@@ -1,13 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Results from './Results';
-import styles from './ImageUploader.module.css';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import InferenceService from '../InferenceService';
+import { Box, Button, CircularProgress, Container, TextField, Typography, styled } from '@mui/material';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import ImageSearchIcon from '@mui/icons-material/ImageSearch';
 
 interface ImageUploaderProps {
     containerWidth: string;
 }
+
+const ImagePreview = styled('img')({
+    width: '100%',
+    maxHeight: '400px',
+    objectFit: 'contain',
+    borderRadius: '8px',
+    marginTop: '20px',
+});
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
     const [file, setFile] = useState<File | null>(null);
@@ -100,93 +110,98 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
         } catch (error) {
             console.error('Error:', error);
             toast.error('Error processing the image');
-        } finally {
         }
     };
 
     const results = classificationResults ? Object.entries(classificationResults) : [];
 
-    const containerStyle = { width: containerWidth, maxWidth: '768px' };
-
     return (
         <>
             <ToastContainer position="top-center" autoClose={4000} hideProgressBar={true}
                             newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss
-                            draggable pauseOnHover toastClassName={styles.toastCustom} />
+                            draggable pauseOnHover />
 
-            <div className="container mt-4" style={containerStyle}>
+            <Container maxWidth="sm" sx={{ width: containerWidth }}>
                 <form onSubmit={onSubmit}>
-                    <div className="mb-3">
-                        <div className={`${styles.buttonGroup} ${styles.centerDiv} mb-3`}>
-                            <input
-                                type="file"
-                                className={`form-control ${styles.customFileInput}`}
-                                id="file-upload"
-                                onChange={onFileChange}
-                                accept="image/*"
-                                style={{ display: 'none' }}
-                                ref={fileInputRef}
-                            />
-                            <button
-                                type="button"
-                                className={`btn btn-primary ${styles.buttonSpacing}`}
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                Choose file
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={() => cameraInputRef.current?.click()}
-                            >
-                                Take picture
-                            </button>
-                        </div>
-                        <div className={styles.centerDiv} style={{ marginTop: '30px' }}>
-                            <input
-                                type="text"
-                                className={`form-control ${styles.urlInput}`}
-                                placeholder="Enter image URL"
-                                value={imageUrl}
-                                onChange={(e) => setImageUrl(encodeURI(e.target.value))}
-                            />
-                        </div>
-                        <div className={styles.centerDiv} style={{ marginTop: '10px' }}>
-                            <button
-                                type="button"
-                                className="btn btn-info"
-                                onClick={fetchImageFromUrl}
-                            >
-                                Load Image
-                            </button>
-                        </div>
-
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
                         <input
                             type="file"
+                            id="file-upload"
+                            onChange={onFileChange}
                             accept="image/*"
-                            capture="environment"
                             style={{ display: 'none' }}
-                            onChange={handleCameraInput}
-                            ref={cameraInputRef}
+                            ref={fileInputRef}
                         />
-                    </div>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => fileInputRef.current?.click()}
+                            startIcon={<ImageSearchIcon />}
+                            sx={{ mr: 2 }}
+                        >
+                            Choose File
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={() => cameraInputRef.current?.click()}
+                            startIcon={<PhotoCameraIcon />}
+                        >
+                            Take Picture
+                        </Button>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                        <TextField
+                            fullWidth
+                            placeholder="Enter image URL"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(encodeURI(e.target.value))}
+                        />
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                        <Button
+                            variant="contained"
+                            color="info"
+                            onClick={fetchImageFromUrl}
+                        >
+                            Load Image
+                        </Button>
+                    </Box>
+
+                    <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        style={{ display: 'none' }}
+                        onChange={handleCameraInput}
+                        ref={cameraInputRef}
+                    />
+
                     {preview && (
-                        <div className="mb-3">
-                            <img src={preview} alt="No image found." className={styles.roundedImage} />
-                        </div>
+                        <ImagePreview src={preview} alt="No image found." />
                     )}
-                    {file || imageUrl ? (
-                        <button type="submit" className="btn btn-primary">Identify</button>
-                    ) : null}
+                    {(file || imageUrl) && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                color="primary"
+                            >
+                                Identify
+                            </Button>
+                        </Box>
+                    )}
                 </form>
                 {results.length > 0 ? (
                     <Results results={results} />
-                ) : (loading ? (
-                    <div className={styles.spinner}>
-                        <div className={styles.loader}></div>
-                    </div>
-                ) : null)}
-            </div>
+                ) : (
+                    loading && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                            <CircularProgress />
+                        </Box>
+                    )
+                )}
+            </Container>
         </>
     );
 };

@@ -11,7 +11,14 @@ from PIL import Image
 import pandas as pd
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
 import geopandas as gpd
+
+import aiohttp
+import aiofiles
+import asyncio
+import os
+from tqdm.asyncio import tqdm
 
 
 @dataclass
@@ -24,60 +31,61 @@ class ObservationMedia:
     def url(self):
         return self.identifier
 
+    @property
+    def path(self):
+        url_hash = hashlib.md5(self.url.encode()).hexdigest()[:8]
+        return f"{self.species}/{self.gbifID}_{url_hash}.jpg"
+
 
 PATH = "data/"
 IMG_PATH = "/run/media/hdd/arttu/inaturalist_images"
 
 
-def download_file(url, save_path, lock, progress_bar):
-    response = requests.get(url)
-    response.raise_for_status()  # Check for HTTP errors
+async def fetch(session, media, progress, base_dir, semaphore):
+    async with semaphore:
+        try:
+            async with session.get(media.url) as response:
+                if response.status == 200:
 
-    data = requests.get(url).content
-    img = Image.open(io.BytesIO(data))
-    img.thumbnail((512, 512))
-    img.save(save_path, "JPEG")
-    with lock:
-        progress_bar.update(1)
+                    save_path = base_dir / media.path
+                    save_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    data = await response.read()
+                    img = Image.open(io.BytesIO(data)).convert("RGB")
+                    img.thumbnail((512, 512))
+                    img.save(save_path, "JPEG")
+
+                progress.update(1)
+        except Exception as e:
+            print(f"Failed to download {media.url}: {e}")
 
 
-def download_files_in_parallel(observation_medias, max_workers=5):
+async def download_all(observation_medias):
+
     base_dir = Path(IMG_PATH)
     base_dir.mkdir(parents=True, exist_ok=True)
 
-    lock = Lock()
-    progress_bar = tqdm(total=len(observation_medias), desc="Downloading", unit="file")
+    media_dclasses = observation_medias[["gbifID", "identifier", "species"]].apply(
+        lambda x: ObservationMedia(**x.to_dict()), axis=1
+    )
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = []
-        for obs_media in observation_medias:
-            save_dir = base_dir / obs_media.species
-            save_dir.mkdir(parents=True, exist_ok=True)
+    print(f"{len(media_dclasses)} files to download")
 
-            # hexdigest of the url to avoid collision
-            url_hash = hashlib.md5(obs_media.url.encode()).hexdigest()[:8]
+    existing_files = set([str(f) for f in Path(IMG_PATH).rglob("*")])
 
-            save_path = save_dir / f"{obs_media.gbifID}_{url_hash}.jpg"
-            futures.append(
-                executor.submit(
-                    download_file, obs_media.url, save_path, lock, progress_bar
-                )
-            )
+    not_downloaded = [
+        media for media in media_dclasses if not str(base_dir / media.path) in existing_files
+    ]
 
-        succ = []
+    print(f"Downloading {len(not_downloaded)} files")
 
-        for obs_media, future in zip(
-            observation_medias, concurrent.futures.as_completed(futures)
-        ):
-            try:
-                future.result()  # We can handle exceptions here if needed
-                # save the url to a file to keep track of the downloaded files
-                succ.append(obs_media.url)
+    semaphore = asyncio.Semaphore(12)
 
-            except Exception as e:
-                print(f"Error occurred: {e}")
-
-        return succ
+    async with aiohttp.ClientSession() as session:
+        progress = tqdm(total=len(not_downloaded), desc="Downloading")
+        tasks = [fetch(session, media, progress, base_dir, semaphore) for media in not_downloaded]
+        await asyncio.gather(*tasks)
+        progress.close()
 
 
 def choose_european(df):
@@ -99,7 +107,9 @@ def choose_european(df):
 
     # Load the world map
     world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-    europe = world[world["continent"] == "Europe"]
+    #europe = world[world["continent"] == "Europe"]
+
+    europe = world[world["name"].isin(["Finland"])]
 
     # Create a GeoDataFrame from the observations
     gdf = gpd.GeoDataFrame(
@@ -153,35 +163,28 @@ if __name__ == "__main__":
     # add multimedia column to observations
 
     observations = observations.merge(multimedia, on="gbifID", how="left")
-    print(f"left with {len(observations)} media records to download")
+    print(f"{len(observations)} media records available in total")
     observations.dropna(subset=["identifier", "species"], inplace=True)
 
-    observations = choose_european(observations)
+    european_species = choose_european(observations)["species"].unique()
 
-    breakpoint()
+    observations = observations[observations["species"].isin(european_species)]
+
+    print(f"left with {len(observations)} media records to download")
+
+    # number of observations per species
+    #species_counts = observations["species"].value_counts()
+
+    #thingy = species_counts.sort_values(ascending=False)
+
+    # visualize
+    #plt.bar(x=range(len(thingy.index)), height=thingy.values, log=True)
+    #plt.show()
 
     # choose a random sample of 1000 rows. Download the images from the URLs in the "identifier" column,
     # and add the bytes to a column called "image_bytes"
 
-    subsample = observations.sample(50).reset_index(drop=True)
+    observations = observations.sample(100000, random_state=43)
 
-    # chunk the subsample into smaller parts
-    chunk_size = 10
+    asyncio.run(download_all(observations))
 
-    chunks = [subsample.iloc[i : i + chunk_size] for i in range(0, len(subsample), chunk_size)]
-
-    for i, chunk in enumerate(chunks):
-        print(f"Downloading chunk {i+1} / {len(chunks)}")
-        succ = download_files_in_parallel(
-            chunk[["gbifID", "species", "identifier"]].apply(
-                lambda x: ObservationMedia(**x.to_dict()), axis=1
-            ),
-            max_workers=10,
-        )
-        print(f"Successfully downloaded {len(succ)} / {len(chunk)}")
-        # save successfully downloaded urls to a file
-        with open("downloaded_urls.txt", "w") as f:
-            for url in succ:
-                f.write(url + "\n")
-
-    breakpoint()

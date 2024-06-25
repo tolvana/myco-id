@@ -44,6 +44,7 @@ const GbifObservations: React.FC<{ gbifId: string }> = ({ gbifId }) => {
 };
 
 const Results: React.FC<ResultsProps> = ({ results }) => {
+  console.log(results);
   return (
     <div className={styles.mainContainer}>
       {results.map(([scientificName, { probability, info }]) => {
@@ -61,11 +62,11 @@ const Results: React.FC<ResultsProps> = ({ results }) => {
                   <>
                     <span className={styles.vernacularName}>{info.common_names["eng"][0]}</span>
                     <span> (</span>
-                    <span className={styles.scientificName}>{scientificName}</span>
+                    <span className={styles.scientificName}>{info.scientific_name}</span>
                     <span>)</span>
                   </>
                 ) : (
-                  <span className={styles.scientificName}>{scientificName}</span>
+                  <span className={styles.scientificName}>{info.scientific_name}</span>
                 )}
               </div>
 

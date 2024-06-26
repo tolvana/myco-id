@@ -76,7 +76,7 @@ const ResultEntry = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(2),
   padding: theme.spacing(2),
   borderRadius: "8px",
-  backgroundColor: theme.palette.mode == "dark" ? "#222" : "#f6f6f6",
+  backgroundColor: theme.palette.mode === "dark" ? "#222" : "#f6f6f6",
   boxShadow: theme.shadows[2],
 }));
 

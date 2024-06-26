@@ -19,7 +19,7 @@ class InferenceService {
         try {
 
             const modelBuffer = await this.modelCache.loadModel(this.modelPath, "trial");
-            this.session = await ort.InferenceSession.create(this.modelPath, { executionProviders: ['webgl'] });
+            this.session = await ort.InferenceSession.create(modelBuffer, { executionProviders: ['webgl'] });
             this.metadata = await fetch(this.metadataPath).then((response) => response.json());
         } catch (error) {
             throw new Error('Failed to load model: ' + (error as Error).message);
@@ -91,15 +91,13 @@ class InferenceService {
                 maxIdx = i;
             }
         }
-        const logitSum = values.reduce((a: number, b: number) => a + b, 0);
+
         console.log("Max index: ", maxIdx);
         console.log("Max logit: ", values[maxIdx]);
         console.log("Exp sum: ", sum);
 
 
         return this._createResults(softmax, 5);
-
-        //return output['output'] as ort.Tensor; // Adjust output name as per your model
     }
 
     _createResults(probs: Array<number>, topK: number = 5, minProb: number = 0.00001): Record<string, any> {

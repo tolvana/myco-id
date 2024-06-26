@@ -3,7 +3,7 @@ import Results from './Results';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import InferenceService from '../InferenceService';
-import { Box, Button, CircularProgress, Container, TextField, Typography, styled } from '@mui/material';
+import { Box, Button, CircularProgress, Container, TextField, styled } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import ImageSearchIcon from '@mui/icons-material/ImageSearch';
 

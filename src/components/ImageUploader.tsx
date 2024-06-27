@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Results from './Results';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import InferenceService from '../InferenceService';
-import { Box, Button, CircularProgress, Container, TextField, styled } from '@mui/material';
+import { Box, Button, CircularProgress, Container, TextField, styled, Typography } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import ImageSearchIcon from '@mui/icons-material/ImageSearch';
 
@@ -25,24 +25,36 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
     const [classificationResults, setClassificationResults] = useState<Record<string, any> | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [imageUrl, setImageUrl] = useState<string>('');
-    const [inferenceService, setInferenceService] = useState<InferenceService | null>(null);
+    const [downloadProgress, setDownloadProgress] = useState<number | null>(0);
+    const [downloading, setDownloading] = useState<boolean>(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
 
+    const inferenceService = useMemo(() => new InferenceService("model.onnx", "metadata.json"), []);
+
+    const onDownloadProgress = (progress: number) => {
+        setDownloading(true);
+        if (progress === 100) {
+            setDownloadProgress(null);
+        } else {
+            setDownloadProgress(progress);
+        }
+    };
+
     useEffect(() => {
-        const initInferenceService = async () => {
-            const service = new InferenceService("./model.onnx", "metadata.json");
+        const loadModel = async () => {
             try {
-                await service.loadModel();
-                setInferenceService(service);
+                await inferenceService.loadModel(onDownloadProgress);
             } catch (error) {
                 console.error(error);
                 toast.error((error as Error).message);
+            } finally {
+                setDownloading(false);
             }
         };
 
-        initInferenceService();
+        loadModel();
     }, []);
 
     const resetResults = () => {
@@ -98,13 +110,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
             image.src = preview!;
 
             image.onload = async () => {
-                if (inferenceService) {
-                    const result = await inferenceService.runInference(image);
-                    setClassificationResults(result);
-                } else {
-                    toast.error('Inference service not initialized');
-                }
-
+                const result = await inferenceService.runInference(image);
+                setClassificationResults(result);
                 setLoading(false);
             };
         } catch (error) {
@@ -186,20 +193,40 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
                                 type="submit"
                                 variant="contained"
                                 color="primary"
+                                disabled={loading}
+                                sx={{ position: 'relative' }}
                             >
+                                {loading && (
+                                    <CircularProgress
+                                        size={24}
+                                        sx={{
+                                            color: 'primary.contrastText',
+                                            position: 'absolute',
+                                            top: '50%',
+                                            left: '50%',
+                                            marginTop: '-12px',
+                                            marginLeft: '-12px',
+                                        }}
+                                    />
+                                )}
                                 Identify
                             </Button>
                         </Box>
                     )}
                 </form>
-                {results.length > 0 ? (
+                {(results.length > 0 || loading) && (
                     <Results results={results} />
-                ) : (
-                    loading && (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                            <CircularProgress />
-                        </Box>
-                    )
+                )}
+                {downloading && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 3 }}>
+                    {downloadProgress !== null ? (
+                        <CircularProgress variant="determinate" value={downloadProgress} />
+                         ) : (
+
+                        <CircularProgress/>
+                         )}
+                        <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>Downloading model...</Typography>
+                    </Box>
                 )}
             </Container>
         </>

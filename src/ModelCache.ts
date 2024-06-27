@@ -31,12 +31,42 @@ class ModelCache {
         });
     }
 
-    async saveModel(url: string, modelName: string): Promise<void> {
+    async saveModel(url: string, modelName: string, onProgress: (progress: number) => void): Promise<void> {
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error('Failed to fetch model');
         }
-        const arrayBuffer = await response.arrayBuffer();
+
+        const contentLength = response.headers.get('content-length');
+        if (!contentLength) {
+            throw new Error('Content-Length header is missing');
+        }
+
+        const totalBytes = parseInt(contentLength, 10);
+        let loadedBytes = 0;
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+            throw new Error('Failed to get reader from response body');
+        }
+
+        const stream = new ReadableStream({
+            async start(controller) {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        break;
+                    }
+                    loadedBytes += value.byteLength;
+                    onProgress((loadedBytes / totalBytes) * 100);
+                    controller.enqueue(value);
+                }
+                controller.close();
+                reader.releaseLock();
+            }
+        });
+
+        const arrayBuffer = await new Response(stream).arrayBuffer();
 
         const db = await this.initDB();
         const transaction = db.transaction([this.storeName], 'readwrite');
@@ -74,14 +104,14 @@ class ModelCache {
         });
     }
 
-    async loadModel(url: string, modelName: string): Promise<ArrayBuffer> {
+    async loadModel(url: string, modelName: string, onProgress: (progress: number) => void): Promise<ArrayBuffer> {
         try {
             const model = await this.getModel(modelName);
             console.log('Model loaded from IndexedDB');
             return model;
         } catch (error) {
             console.log('Model not found in IndexedDB, fetching from network');
-            await this.saveModel(url, modelName);
+            await this.saveModel(url, modelName, onProgress);
             const model = await this.getModel(modelName);
             return model;
         }

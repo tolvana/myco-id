@@ -15,10 +15,9 @@ class InferenceService {
         this.modelCache = new ModelCache();
     }
 
-    async loadModel(): Promise<void> {
+    async loadModel(onProgress: (progress: number) => void): Promise<void> {
         try {
-
-            const modelBuffer = await this.modelCache.loadModel(this.modelPath, "trial");
+            const modelBuffer = await this.modelCache.loadModel(this.modelPath, "trial", onProgress);
             this.session = await ort.InferenceSession.create(modelBuffer, { executionProviders: ['webgl'] });
             this.metadata = await fetch(this.metadataPath).then((response) => response.json());
         } catch (error) {
@@ -67,12 +66,17 @@ class InferenceService {
             throw new Error('Model not loaded');
         }
 
+        let start = performance.now()
         const tensor = await this.preprocessImage(image);
+        console.log(performance.now() - start)
 
         //console.log("First 10 input samples: ", tensor.data.slice(0, 10));
 
         const feeds = { input: tensor };
+
+        start = performance.now()
         const output = await this.session.run(feeds);
+        console.log(performance.now() - start)
 
         const outArray = output['output'].data as Float32Array;
         const values = Array.from(outArray);

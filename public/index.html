@@ -40,5 +40,23 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+    <script>
+      // Check if the browser supports the beforeinstallprompt event
+      console.log('serviceWorker' in navigator, 'BeforeInstallPromptEvent' in window);
+      if ('serviceWorker' in navigator && 'BeforeInstallPromptEvent' in window) {
+        window.addEventListener('load', () => {
+          // Wait for the beforeinstallprompt event
+          window.addEventListener('beforeinstallprompt', (event) => {
+            // Prevent the default "Add to Home Screen" prompt
+            console.log('beforeinstallprompt', event);
+
+            event.preventDefault();
+
+            // Automatically show the "Add to Home Screen" prompt on page load
+            event.prompt();
+          });
+        });
+      }
+    </script>
   </body>
 </html>

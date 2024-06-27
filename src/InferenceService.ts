@@ -106,7 +106,7 @@ class InferenceService {
         return this._createResults(softmax, 5);
     }
 
-    _createResults(probs: Array<number>, topK: number = 5, minProb: number = 0.00001): Record<string, any> {
+    _createResults(probs: Array<number>, topK: number = 5, minProb: number = 0.001): Record<string, any> {
 
         const labels = this.metadata["labels"];
 

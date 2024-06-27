@@ -157,23 +157,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
                             Take Picture
                         </Button>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                        <TextField
-                            fullWidth
-                            placeholder="Enter image URL"
-                            value={imageUrl}
-                            onChange={(e) => setImageUrl(encodeURI(e.target.value))}
-                        />
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                        <Button
-                            variant="contained"
-                            color="info"
-                            onClick={fetchImageFromUrl}
-                        >
-                            Load Image
-                        </Button>
-                    </Box>
 
                     <input
                         type="file"

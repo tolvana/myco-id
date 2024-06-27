@@ -1,6 +1,10 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Myco ID",
+  "name": "Myco ID",
+  "description": "Identify mushrooms",
+  "scope": "/",
+  "start_url": "/",
+
   "icons": [
     {
       "src": "favicon.ico",

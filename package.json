@@ -1,5 +1,6 @@
 {
   "name": "myco-id-app",
+  "homepage": "https://tolvana.github.io/myco-id",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

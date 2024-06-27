@@ -18,7 +18,7 @@ class InferenceService {
     async loadModel(onProgress: (progress: number) => void): Promise<void> {
         try {
             const modelBuffer = await this.modelCache.loadModel(this.modelPath, "trial", onProgress);
-            this.session = await ort.InferenceSession.create(modelBuffer, { executionProviders: ['webgl'] });
+            this.session = await ort.InferenceSession.create(modelBuffer, { executionProviders: ['wasm'] });
             this.metadata = await fetch(this.metadataPath).then((response) => response.json());
         } catch (error) {
             throw new Error('Failed to load model: ' + (error as Error).message);

@@ -18,6 +18,8 @@ class InferenceService {
     async loadModel(onProgress: (progress: number) => void): Promise<void> {
         try {
             const modelBuffer = await this.modelCache.loadModel(this.modelPath, "trial", onProgress);
+
+            ort.env.wasm.proxy = true;
             this.session = await ort.InferenceSession.create(modelBuffer, { executionProviders: ['wasm'] });
             this.metadata = await fetch(this.metadataPath).then((response) => response.json());
         } catch (error) {

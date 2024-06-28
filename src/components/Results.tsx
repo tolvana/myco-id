@@ -161,8 +161,11 @@ const Results: React.FC<ResultsProps> = ({ results }) => {
                 key={index}
                 variant="rectangular"
                 width="100%"
-                height={120}
-                sx={{ borderRadius: 1 }}
+                height={0}
+                sx={{
+                  paddingTop: '100%', // This keeps the aspect ratio 1:1
+                  borderRadius: 1
+                }}
               />
             ))}
           </Box>

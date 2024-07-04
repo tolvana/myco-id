@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Results from './Results';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import InferenceService from '../InferenceService';
+import ImageClassifier from '../ImageClassifier';
 import { Box, Button, CircularProgress, Container, TextField, styled, Typography } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import ImageSearchIcon from '@mui/icons-material/ImageSearch';
 
-interface ImageUploaderProps {
+interface ImagePickerProps {
     containerWidth: string;
 }
 
@@ -19,7 +19,7 @@ const ImagePreview = styled('img')({
     marginTop: '20px',
 });
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
+const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [classificationResults, setClassificationResults] = useState<Record<string, any> | null>(null);
@@ -28,10 +28,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
     const [downloadProgress, setDownloadProgress] = useState<number | null>(0);
     const [downloading, setDownloading] = useState<boolean>(false);
 
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
 
-    const inferenceService = useMemo(() => new InferenceService("model.onnx", "metadata.json"), []);
+    const classifier = useMemo(() => new ImageClassifier("model.onnx", "metadata.json"), []);
 
     const onDownloadProgress = (progress: number) => {
         setDownloading(true);
@@ -45,7 +47,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
     useEffect(() => {
         const loadModel = async () => {
             try {
-                await inferenceService.loadModel(onDownloadProgress);
+                await classifier.load(onDownloadProgress);
             } catch (error) {
                 console.error(error);
                 toast.error((error as Error).message);
@@ -61,14 +63,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
         setClassificationResults(null);
     };
 
-    const fetchImageFromUrl = async () => {
-        if (!imageUrl) {
-            return;
-        }
-        resetResults();
-        setPreview(imageUrl);
-    };
-
     const handleCameraInput = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
@@ -76,7 +70,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
             const reader = new FileReader();
             reader.onload = function(e) {
                 resetResults();
-                setPreview(e.target!.result as string); // Set preview to display the image
+                const url = e.target!.result as string;
+                console.log(url);
+                setImageUrl(url); // Set preview to display the image
             };
             reader.readAsDataURL(file);
         }
@@ -87,9 +83,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
             const selectedFile = event.target.files[0];
             setFile(selectedFile);
             resetResults();
-            setPreview(URL.createObjectURL(selectedFile));
+            const url = URL.createObjectURL(selectedFile);
+            console.log(url);
+            setImageUrl(url);
         } else {
-            setPreview(null);
+            setImageUrl('');
         }
     };
 
@@ -107,10 +105,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
 
         try {
             let image = new Image();
-            image.src = preview!;
+            image.src = imageUrl!;
 
             image.onload = async () => {
-                const result = await inferenceService.runInference(image);
+                const result = await classifier.classify(image);
                 setClassificationResults(result);
                 setLoading(false);
             };
@@ -167,8 +165,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
                         ref={cameraInputRef}
                     />
 
-                    {preview && (
-                        <ImagePreview src={preview} alt="No image found." />
+                    {imageUrl && (
+                        <ImagePreview src={imageUrl} alt="No image found." />
                     )}
                     {(file || imageUrl) && (
                         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
@@ -216,4 +214,4 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ containerWidth }) => {
     );
 };
 
-export default ImageUploader;
+export default ImagePicker;

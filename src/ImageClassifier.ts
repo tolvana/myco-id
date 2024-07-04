@@ -1,7 +1,7 @@
 import * as ort from 'onnxruntime-web';
 import ModelCache from './ModelCache';
 
-class InferenceService {
+class ImageClassifier {
     private modelPath: string;
     private metadataPath: string;
     private metadata: any;
@@ -15,7 +15,7 @@ class InferenceService {
         this.modelCache = new ModelCache();
     }
 
-    async loadModel(onProgress: (progress: number) => void): Promise<void> {
+    async load(onProgress: (progress: number) => void): Promise<void> {
         try {
             const modelName = "trial";
             const modelBuffer = await this.modelCache.loadModel(this.modelPath, modelName, onProgress);
@@ -76,7 +76,7 @@ class InferenceService {
         return await ort.Tensor.fromImage(imageData);
     }
 
-    async runInference(image: HTMLImageElement): Promise<Record<string, any>> {
+    async classify(image: HTMLImageElement): Promise<Record<string, any>> {
         if (!this.session) {
             throw new Error('Model not loaded');
         }
@@ -115,7 +115,6 @@ class InferenceService {
         console.log("Max logit: ", values[maxIdx]);
         console.log("Exp sum: ", sum);
 
-
         return this._createResults(softmax, 5);
     }
 
@@ -147,4 +146,4 @@ class InferenceService {
     }
 }
 
-export default InferenceService;
+export default ImageClassifier;

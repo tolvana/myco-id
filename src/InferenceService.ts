@@ -17,50 +17,63 @@ class InferenceService {
 
     async loadModel(onProgress: (progress: number) => void): Promise<void> {
         try {
-            const modelBuffer = await this.modelCache.loadModel(this.modelPath, "trial", onProgress);
+            const modelName = "trial";
+            const modelBuffer = await this.modelCache.loadModel(this.modelPath, modelName, onProgress);
+            this.metadata = await this.modelCache.loadMetadata(this.metadataPath, modelName);
 
             ort.env.wasm.proxy = true;
             this.session = await ort.InferenceSession.create(modelBuffer, { executionProviders: ['wasm'] });
-            this.metadata = await fetch(this.metadataPath).then((response) => response.json());
         } catch (error) {
             throw new Error('Failed to load model: ' + (error as Error).message);
         }
     }
 
     async preprocessImage(image: HTMLImageElement): Promise<ort.Tensor> {
-        const canvas = document.createElement('canvas');
         const size = this.metadata["size"] ?? 384;
+        const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
             throw new Error('Failed to get 2D context');
         }
-        ctx.drawImage(image, 0, 0, size, size);
+
+        // Calculate dimensions for cropping
+        const aspect = image.width / image.height;
+        let targetWidth: number;
+        let targetHeight: number;
+        let offsetX: number;
+        let offsetY: number;
+
+        console.log("image.width: ", image.width);
+        console.log("image.height: ", image.height);
+
+        if (aspect > 1) {
+            // Landscape orientation: width is the larger dimension
+            targetWidth = image.width * (size / image.height);
+            targetHeight = size;
+            offsetX = (image.width - image.height) / 2;
+            offsetY = 0;
+        } else {
+            // Portrait orientation: height is the larger dimension
+            targetWidth = size;
+            targetHeight = image.height * (size / image.width);
+            offsetX = 0;
+            offsetY = (image.height - image.width) / 2;
+        }
+        console.log("targetWidth: ", targetWidth);
+        console.log("targetHeight: ", targetHeight);
+        console.log("offsetX: ", offsetX);
+        console.log("offsetY: ", offsetY);
+        console.log("size: ", size);
+
+        // Draw the image onto the canvas with cropping
+        ctx.drawImage(image, offsetX, offsetY, image.width, image.height, 0, 0, targetWidth, targetHeight);
 
         const imageData = ctx.getImageData(0, 0, size, size);
         const { data } = imageData;
 
-        const mean = this.metadata["mean"] ?? [0.485, 0.456, 0.406];
-        const std = this.metadata["std"] ?? [0.229, 0.224, 0.225];
-
-        const float32Array = new Float32Array(size * size * 3);
-        // color channel
-        for (let c = 0; c < 3; c++) {
-            // height
-            for (let h = 0; h < size; h++) {
-                // width
-                for (let w = 0; w < size; w++) {
-                    const idx = h * size + w;
-                    float32Array[c * size * size + idx] = (data[idx * 4 + c] / 255.0 - mean[c]) / std[c];
-                }
-            }
-        }
-
-        // TODO: fromImage could be used if normalization happens in the model...
-        // const output = await ort.Tensor.fromImage(imageData);
-
-        return new ort.Tensor('float32', float32Array, [1, 3, 384, 384]);
+        return await ort.Tensor.fromImage(imageData);
     }
 
     async runInference(image: HTMLImageElement): Promise<Record<string, any>> {
@@ -122,7 +135,6 @@ class InferenceService {
 
         let infos = this.metadata["infos"];
         let topKData = topKIndices.map(i => ({ info: infos[labels[i]], probability: probs[i] }));
-
 
         let zipped: Record<string, any> = {};
         topKClasses.forEach((className, index) => {

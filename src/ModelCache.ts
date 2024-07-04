@@ -104,6 +104,22 @@ class ModelCache {
         });
     }
 
+    async clear(): Promise<void> {
+        const db = await this.initDB();
+        const transaction = db.transaction([this.storeName], 'readwrite');
+        const store = transaction.objectStore(this.storeName);
+        const request = store.clear();
+
+        return new Promise<void>((resolve, reject) => {
+            request.onsuccess = () => {
+                resolve();
+            };
+            request.onerror = (event) => {
+                reject((event.target as any).error);
+            };
+        });
+    }
+
     async loadModel(url: string, modelName: string, onProgress: (progress: number) => void): Promise<ArrayBuffer> {
         try {
             const model = await this.getModel(modelName);
@@ -111,10 +127,68 @@ class ModelCache {
             return model;
         } catch (error) {
             console.log('Model not found in IndexedDB, fetching from network');
+            await this.clear();
             await this.saveModel(url, modelName, onProgress);
             const model = await this.getModel(modelName);
             return model;
         }
+    }
+
+    async loadMetadata(url: string, modelName: string): Promise<any> {
+        try {
+            const metadata = await this.getMetadata(modelName);
+            console.log('Metadata loaded from IndexedDB');
+            return metadata;
+        } catch (error) {
+            console.log('Metadata not found in IndexedDB, fetching from network');
+            await this.saveMetadata(url, modelName);
+            const metadata = await this.getMetadata(modelName);
+            return metadata;
+        }
+    }
+
+    async saveMetadata(url: string, modelName: string): Promise<void> {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch metadata');
+        }
+
+        const metadata = await response.json();
+
+        const db = await this.initDB();
+        const transaction = db.transaction([this.storeName], 'readwrite');
+        const store = transaction.objectStore(this.storeName);
+        const request = store.put(metadata, modelName + '_metadata');
+
+        return new Promise<void>((resolve, reject) => {
+            request.onsuccess = () => {
+                resolve();
+            };
+            request.onerror = (event) => {
+                reject((event.target as any).error);
+            };
+        });
+    }
+
+    async getMetadata(modelName: string): Promise<any> {
+        const db = await this.initDB();
+        const transaction = db.transaction([this.storeName], 'readonly');
+        const store = transaction.objectStore(this.storeName);
+        const request = store.get(modelName + '_metadata');
+
+        return new Promise<any>((resolve, reject) => {
+            request.onsuccess = (event) => {
+                const result = (event.target as any).result;
+                if (result) {
+                    resolve(result);
+                } else {
+                    reject(new Error('Metadata not found'));
+                }
+            };
+            request.onerror = (event) => {
+                reject((event.target as any).error);
+            };
+        });
     }
 }
 

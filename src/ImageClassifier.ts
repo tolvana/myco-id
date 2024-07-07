@@ -76,6 +76,53 @@ class ImageClassifier {
         return await ort.Tensor.fromImage(imageData);
     }
 
+    async classifyMultiple(images: Array<HTMLImageElement>): Promise<Record<string, any>> {
+
+        let start = performance.now()
+        const tensors = await Promise.all(images.map(async (image) => await this.preprocessImage(image)));
+        console.log(performance.now() - start)
+
+        start = performance.now()
+        const outputs = await Promise.all(tensors.map(async (tensor) => {
+            const feed = { input: tensor };
+            if (!this.session) {
+                throw new Error('Model not loaded');
+            }
+            return (await this.session.run(feed))["output"].data as Float32Array;
+        }));
+        console.log(performance.now() - start)
+
+        const values = await Promise.all(await outputs.map(async (output) => {
+            return Array.from(await output);
+        }));
+
+        const aggregated = values.reduce((acc, val) => {
+            return acc.map((v, i) => v + val[i]);
+        });
+
+        // softmax
+        const exped = aggregated.map((x: number) => Math.exp(x));
+        const sum = exped.reduce((a: number, b: number) => a + b, 0);
+        const softmax = exped.map((x: number) => x / sum);
+
+        //console.log("First 10 output samples: ", softmax.slice(0, 10));
+
+        let maxIdx = 0;
+
+        for (let i = 1; i < softmax.length; i++) {
+            if (softmax[i] > softmax[maxIdx]) {
+                maxIdx = i;
+            }
+        }
+
+        console.log("Max index: ", maxIdx);
+        console.log("Max logit: ", values[maxIdx]);
+        console.log("Exp sum: ", sum);
+
+        return this._createResults(softmax, 5);
+    }
+
+
     async classify(image: HTMLImageElement): Promise<Record<string, any>> {
         if (!this.session) {
             throw new Error('Model not loaded');

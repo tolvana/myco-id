@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import Results from './Results';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ImageClassifier from '../ImageClassifier';
-import { Box, Button, CircularProgress, Container, TextField, styled, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Container, styled, Typography } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import ImageSearchIcon from '@mui/icons-material/ImageSearch';
+
+import Results from './Results';
+import ImageClassifier from '../ImageClassifier';
+import ImagesPreview from './ImagesPreview';
 
 interface ImagePickerProps {
     containerWidth: string;
@@ -20,7 +22,6 @@ const ImagePreview = styled('img')({
 });
 
 const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
-    const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [classificationResults, setClassificationResults] = useState<Record<string, any> | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
@@ -28,7 +29,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
     const [downloadProgress, setDownloadProgress] = useState<number | null>(0);
     const [downloading, setDownloading] = useState<boolean>(false);
 
-    const [imageUrls, setImageUrls] = useState<string[]>([]);
+    const [imageUrls, setImageUrls] = useState<string[]>(['', '', '', '']);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -63,37 +64,30 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
         setClassificationResults(null);
     };
 
-    const handleCameraInput = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files[0]) {
-            const file = event.target.files[0];
-            setFile(file);  // Save the file in the state
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                resetResults();
-                const url = e.target!.result as string;
-                console.log(url);
-                setImageUrl(url); // Set preview to display the image
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
             const selectedFile = event.target.files[0];
-            setFile(selectedFile);
             resetResults();
             const url = URL.createObjectURL(selectedFile);
             console.log(url);
             setImageUrl(url);
-        } else {
-            setImageUrl('');
+            const index = imageUrls.findIndex((url) => url === '');
+            if (index !== -1) {
+                const newImageUrls = [...imageUrls];
+                newImageUrls[index] = url;
+                setImageUrls(newImageUrls);
+            } else {
+                const newImageUrls = [...imageUrls];
+                newImageUrls[0] = url;
+                setImageUrls(newImageUrls);
+            }
         }
     };
 
     const onSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        if (!file && !imageUrl) {
+        // if all images are empty, return
+        if (imageUrls.every((url) => url === '')) {
             return;
         }
 
@@ -104,19 +98,30 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
         setLoading(true);
 
         try {
-            let image = new Image();
-            image.src = imageUrl!;
 
-            image.onload = async () => {
-                const result = await classifier.classify(image);
-                setClassificationResults(result);
-                setLoading(false);
-            };
+            const validImageUrls = imageUrls.filter((url) => url !== '');
+
+            const images = imageUrls.filter((url) => url !== '').map((url) => {
+                let img = new Image();
+                img.src = url;
+                return img;
+            });
+
+            const result = await classifier.classifyMultiple(images);
+            setClassificationResults(result);
         } catch (error) {
             console.error('Error:', error);
             toast.error('Error processing the image');
+        } finally {
+            setLoading(false);
         }
     };
+
+    const onDelete = (index: number) => {
+        const newImageUrls = [...imageUrls];
+        newImageUrls[index] = '';
+        setImageUrls(newImageUrls);
+    }
 
     const results = classificationResults ? Object.entries(classificationResults) : [];
 
@@ -161,14 +166,13 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
                         accept="image/*"
                         capture="environment"
                         style={{ display: 'none' }}
-                        onChange={handleCameraInput}
+                        onChange={onFileChange}
                         ref={cameraInputRef}
                     />
 
+                    <ImagesPreview urls={imageUrls} onDelete={onDelete} />
+
                     {imageUrl && (
-                        <ImagePreview src={imageUrl} alt="No image found." />
-                    )}
-                    {(file || imageUrl) && (
                         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                             <Button
                                 type="submit"

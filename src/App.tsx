@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, CssBaseline, Container, Typography, Box, IconButton, AppBar, Toolbar } from '@mui/material';
 import { lightTheme, darkTheme } from './theme';
-import ImagePicker from './components/ImagePicker';
+import MainView from './components/MainView';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 
@@ -63,7 +63,7 @@ const App: React.FC = () => {
             </AppBar>
             <Container>
                 <Box sx={{ my: 4 }}>
-                    <ImagePicker containerWidth={containerWidth} />
+                    <MainView containerWidth={containerWidth} />
                 </Box>
             </Container>
         </ThemeProvider>

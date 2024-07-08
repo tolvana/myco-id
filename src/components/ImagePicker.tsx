@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Box, Button, CircularProgress, Container, styled, Typography } from '@mui/material';
+import Collapse from '@mui/material/Collapse';
+import { useTheme } from '@mui/material/styles';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import ImageSearchIcon from '@mui/icons-material/ImageSearch';
 
@@ -22,19 +24,22 @@ const ImagePreview = styled('img')({
 });
 
 const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
-    const [preview, setPreview] = useState<string | null>(null);
+
     const [classificationResults, setClassificationResults] = useState<Record<string, any> | null>(null);
+    const [imageUrls, setImageUrls] = useState<string[]>(['', '', '', '']);
     const [loading, setLoading] = useState<boolean>(false);
-    const [imageUrl, setImageUrl] = useState<string>('');
     const [downloadProgress, setDownloadProgress] = useState<number | null>(0);
     const [downloading, setDownloading] = useState<boolean>(false);
-
-    const [imageUrls, setImageUrls] = useState<string[]>(['', '', '', '']);
+    const [lastCamera, setLastCamera] = useState<boolean>(true);
+    const [targetIdx, setTargetIdx] = useState<number | null>(null);
+    const [invalidated, setInvalidated] = useState<boolean>(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
 
     const classifier = useMemo(() => new ImageClassifier("model.onnx", "metadata.json"), []);
+
+    const theme = useTheme();
 
     const onDownloadProgress = (progress: number) => {
         setDownloading(true);
@@ -51,7 +56,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
                 await classifier.load(onDownloadProgress);
             } catch (error) {
                 console.error(error);
-                toast.error((error as Error).message);
+                toast.error("Unexpected error loading the model");
             } finally {
                 setDownloading(false);
             }
@@ -60,45 +65,46 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
         loadModel();
     }, []);
 
-    const resetResults = () => {
-        setClassificationResults(null);
-    };
-
     const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files.length > 0) {
-            const selectedFile = event.target.files[0];
-            resetResults();
-            const url = URL.createObjectURL(selectedFile);
-            console.log(url);
-            setImageUrl(url);
-            const index = imageUrls.findIndex((url) => url === '');
-            if (index !== -1) {
-                const newImageUrls = [...imageUrls];
-                newImageUrls[index] = url;
-                setImageUrls(newImageUrls);
-            } else {
-                const newImageUrls = [...imageUrls];
-                newImageUrls[0] = url;
-                setImageUrls(newImageUrls);
+        console.log(event.target.files);
+        if (event.target.files) {
+
+            if (event.target.files.length > 4) {
+                toast.warn("You can only choose up to 4 images");
+            } else if (event.target.files.length == 0) {
+                return;
             }
+
+            const newImageUrls = [...imageUrls];
+
+            let j = 0;
+            let localTargetIdx = targetIdx;
+
+            for (let i = 0; i < Math.min(event.target.files.length, 4); i++) {
+                const file = event.target.files[i];
+                const url = URL.createObjectURL(file);
+                const index = localTargetIdx ?? newImageUrls.findIndex((url) => url === '');
+                localTargetIdx = null;
+                setTargetIdx(null);
+                if (index !== -1) {
+                    newImageUrls[index] = url;
+                } else {
+                    newImageUrls[j++] = url;
+                }
+            }
+
+            setImageUrls(newImageUrls);
+            setInvalidated(true);
+            setTargetIdx(null);
         }
     };
 
     const onSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        // if all images are empty, return
-        if (imageUrls.every((url) => url === '')) {
-            return;
-        }
-
-        if (loading || classificationResults) {
-            return;
-        }
 
         setLoading(true);
 
         try {
-
             const validImageUrls = imageUrls.filter((url) => url !== '');
 
             const images = imageUrls.filter((url) => url !== '').map((url) => {
@@ -109,9 +115,10 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
 
             const result = await classifier.classifyMultiple(images);
             setClassificationResults(result);
+            setInvalidated(false);
         } catch (error) {
             console.error('Error:', error);
-            toast.error('Error processing the image');
+            toast.error("Unexpected error processing the image(s)");
         } finally {
             setLoading(false);
         }
@@ -121,31 +128,45 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
         const newImageUrls = [...imageUrls];
         newImageUrls[index] = '';
         setImageUrls(newImageUrls);
+        setInvalidated(true);
+    }
+
+    const onClick = (index: number) => {
+        setTargetIdx(index);
+        if (lastCamera) {
+            cameraInputRef.current?.click();
+        } else {
+            fileInputRef.current?.click();
+        }
     }
 
     const results = classificationResults ? Object.entries(classificationResults) : [];
 
     return (
         <>
-            <ToastContainer position="top-center" autoClose={4000} hideProgressBar={true}
-                            newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss
-                            draggable pauseOnHover />
+            <ToastContainer
+                position="top-center"
+                autoClose={4000}
+                hideProgressBar={true}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme={theme.palette.mode}
+            />
 
             <Container maxWidth="sm" sx={{ width: containerWidth }}>
                 <form onSubmit={onSubmit}>
                     <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                        <input
-                            type="file"
-                            id="file-upload"
-                            onChange={onFileChange}
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            ref={fileInputRef}
-                        />
                         <Button
                             variant="contained"
                             color="primary"
-                            onClick={() => fileInputRef.current?.click()}
+                            onClick={() => {
+                                setLastCamera(false);
+                                fileInputRef.current?.click()
+                            }}
                             startIcon={<ImageSearchIcon />}
                             sx={{ mr: 2 }}
                         >
@@ -154,7 +175,10 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
                         <Button
                             variant="contained"
                             color="secondary"
-                            onClick={() => cameraInputRef.current?.click()}
+                            onClick={() => {
+                                setLastCamera(true);
+                                cameraInputRef.current?.click()
+                            }}
                             startIcon={<PhotoCameraIcon />}
                         >
                             Take Picture
@@ -164,44 +188,57 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ containerWidth }) => {
                     <input
                         type="file"
                         accept="image/*"
-                        capture="environment"
                         style={{ display: 'none' }}
                         onChange={onFileChange}
                         ref={cameraInputRef}
+                        capture="environment"
                     />
 
-                    <ImagesPreview urls={imageUrls} onDelete={onDelete} />
+                    <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={onFileChange}
+                        ref={fileInputRef}
+                        multiple={true}
+                    />
 
-                    {imageUrl && (
+                    <ImagesPreview urls={imageUrls} onDelete={onDelete} onClick={onClick} />
+
+
                         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                             <Button
                                 type="submit"
                                 variant="contained"
                                 color="primary"
-                                disabled={loading}
+                                disabled={loading || downloading || !invalidated || imageUrls.every((url) => url === '')}
                                 sx={{ position: 'relative' }}
                             >
-                                {loading && (
-                                    <CircularProgress
-                                        size={24}
-                                        sx={{
-                                            color: 'primary.contrastText',
-                                            position: 'absolute',
-                                            top: '50%',
-                                            left: '50%',
-                                            marginTop: '-12px',
-                                            marginLeft: '-12px',
-                                        }}
-                                    />
-                                )}
-                                Identify
+
+                            {loading && (
+                                <CircularProgress
+                                    size={24}
+                                    sx={{
+                                        color: 'primary.contrastText',
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: '50%',
+                                        marginTop: '-12px',
+                                        marginLeft: '-12px',
+                                    }}
+                                />
+                            )}
+
+                            Identify
+
                             </Button>
                         </Box>
-                    )}
                 </form>
-                {(results.length > 0 || loading) && (
+
+                <Collapse in={results.length > 0 || loading}>
                     <Results results={results} />
-                )}
+                </Collapse>
+
                 {downloading && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 3 }}>
                     {downloadProgress !== null ? (

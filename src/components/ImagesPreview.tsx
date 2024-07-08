@@ -12,6 +12,7 @@ import { useTheme } from '@mui/material/styles';
 interface ImagesPreviewProps {
     // array of nullable strings
     urls: string[];
+    onClick: (index: number) => void;
     onDelete: (index: number) => void;
 
 };
@@ -37,7 +38,7 @@ const PlaceholderIcon = styled(ImageIcon)({
   color: 'rgba(0, 0, 0, 0.54)',
 });
 
-const ImagesPreview: React.FC<ImagesPreviewProps> = ({ urls, onDelete }) => {
+const ImagesPreview: React.FC<ImagesPreviewProps> = ({ urls, onDelete, onClick }) => {
     console.log(urls);
     const theme = useTheme();
 
@@ -79,17 +80,18 @@ const ImagesPreview: React.FC<ImagesPreviewProps> = ({ urls, onDelete }) => {
                 ) : (
 
                 <Box
-                        sx={{
-                            width: '100%',
-                            height: '100%',
-                            aspectRatio: '1/1',
-                            objectFit: 'cover',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                        }}
-          bgcolor={theme.palette.action.disabledBackground}
-        >
+                    sx={{
+                        width: '100%',
+                        height: '100%',
+                        aspectRatio: '1/1',
+                        objectFit: 'cover',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                    bgcolor={theme.palette.action.disabledBackground}
+                    onClick={() => {onClick(index)}}
+                >
           <AddIcon
             fontSize="large"
             style={{

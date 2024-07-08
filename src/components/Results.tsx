@@ -134,7 +134,7 @@ const Results: React.FC<ResultsProps> = ({ results }) => {
     if (results.length > 0 && resultsContainerRef.current) {
       resultsContainerRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [results]);
+  }, [JSON.stringify(results)]);
 
   if (results.length === 0) {
     return (

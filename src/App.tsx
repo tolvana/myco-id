@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, CssBaseline, Container, Typography, Box, IconButton, AppBar, Toolbar } from '@mui/material';
 import { lightTheme, darkTheme } from './theme';
-import MainView from './components/MainView';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+
+import MainView from './components/MainView';
+import SpeciesDetailView from './components/SpeciesDetailView';
 
 const App: React.FC = () => {
     const [darkMode, setDarkMode] = useState<boolean>(false);
@@ -27,22 +30,6 @@ const App: React.FC = () => {
         setDarkMode(!darkMode);
     };
 
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
-
-    useEffect(() => {
-      const handleResize = () => {
-        setIsMobile(window.innerWidth < 768);
-        setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
-      };
-
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    const containerWidth = isMobile ? '100%' : isTablet ? '70%' : '50%';
-
-
     return (
         <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
             <CssBaseline />
@@ -61,11 +48,16 @@ const App: React.FC = () => {
                     </IconButton>
                 </Toolbar>
             </AppBar>
-            <Container>
-                <Box sx={{ my: 4 }}>
-                    <MainView containerWidth={containerWidth} />
-                </Box>
-            </Container>
+            <Router>
+            <Container maxWidth="sm">
+                    <Box sx={{ my: 4 }}>
+                        <Routes>
+                            <Route path="/" element={<MainView />} />
+                            <Route path="/details/:species" element={<SpeciesDetailView />} />
+                        </Routes>
+                    </Box>
+                </Container>
+            </Router>
         </ThemeProvider>
     );
 };

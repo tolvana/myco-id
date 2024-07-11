@@ -10,7 +10,7 @@ const SpeciesDetailView: React.FC = () => {
     const [speciesInfo, setSpeciesInfo] = useState<any | null>(null);
 
     useEffect(() => {
-        fetch(`/info/${species}.json`)
+        fetch(`/myco-id/info/${species}.json`)
             .then((response) => response.json())
             .then((data) => {
                 console.log(data);

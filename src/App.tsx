@@ -57,7 +57,7 @@ const App: React.FC = () => {
                     </IconButton>
                 </Toolbar>
             </AppBar>
-            <Router>
+            <Router basename="/myco-id">
                 <Container maxWidth="sm">
                     <Box sx={{my: 4}}>
                         <Routes>

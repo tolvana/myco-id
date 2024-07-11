@@ -36,7 +36,6 @@ const GbifObservations: React.FC<{gbifId: string}> = ({gbifId}) => {
             .then((response) => response.json())
             .then((data) => {
                 setMediaResults(data.results);
-                console.log(data.results);
                 setImageLoaded(new Array(data.results.length).fill(false));
             });
     }, [gbifId]);
@@ -44,7 +43,6 @@ const GbifObservations: React.FC<{gbifId: string}> = ({gbifId}) => {
     const handleImageLoad = (index: number) => {
         setImageLoaded((prev) => {
             const newLoaded = [...prev];
-            console.log('Image loaded:', index);
             newLoaded[index] = true;
             return newLoaded;
         });
@@ -131,7 +129,6 @@ const Results: React.FC<ResultsProps> = ({results, onResultClick}) => {
     const resultsContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        console.log(results);
         if (results.length > 0 && resultsContainerRef.current) {
             resultsContainerRef.current.scrollIntoView({behavior: 'smooth'});
         }

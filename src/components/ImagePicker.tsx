@@ -1,27 +1,26 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { toast } from 'react-toastify';
+import React, {useState, useRef} from 'react';
+import {toast} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Box, Button, CircularProgress, Container, styled, Typography } from '@mui/material';
+import {Box, Button} from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import ImageSearchIcon from '@mui/icons-material/ImageSearch';
 
 import ImagesPreview from './ImagesPreview';
 
 interface ImagePickerProps {
+    imageUrls: string[];
     onImages: (urls: string[]) => void;
 }
 
-const ImagePicker: React.FC<ImagePickerProps> = ({ onImages }) => {
+const ImagePicker: React.FC<ImagePickerProps> = ({imageUrls, onImages}) => {
 
     const [targetIdx, setTargetIdx] = useState<number | null>(null);
-    const [imageUrls, setImageUrls] = useState<string[]>(['', '', '', '']);
     const [lastCamera, setLastCamera] = useState<boolean>(true);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
 
     const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        console.log(event.target.files);
         if (event.target.files) {
 
             if (event.target.files.length > 4) {
@@ -49,7 +48,6 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ onImages }) => {
             }
 
             onImages(newImageUrls);
-            setImageUrls(newImageUrls);
             setTargetIdx(null);
         }
     };
@@ -57,7 +55,6 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ onImages }) => {
     const onDelete = (index: number) => {
         const newImageUrls = [...imageUrls];
         newImageUrls[index] = '';
-        setImageUrls(newImageUrls);
         onImages(newImageUrls);
     }
 
@@ -72,7 +69,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ onImages }) => {
 
     return (
         <>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <Box sx={{display: 'flex', justifyContent: 'center', mb: 3}}>
 
                 <Button
                     variant="contained"
@@ -82,7 +79,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ onImages }) => {
                         fileInputRef.current?.click()
                     }}
                     startIcon={<ImageSearchIcon />}
-                    sx={{ mr: 2 }}
+                    sx={{mr: 2}}
                 >
                     Choose File
                 </Button>
@@ -102,7 +99,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ onImages }) => {
             <input
                 type="file"
                 accept="image/*"
-                style={{ display: 'none' }}
+                style={{display: 'none'}}
                 onChange={onFileChange}
                 ref={cameraInputRef}
                 capture="environment"
@@ -111,7 +108,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ onImages }) => {
             <input
                 type="file"
                 accept="image/*"
-                style={{ display: 'none' }}
+                style={{display: 'none'}}
                 onChange={onFileChange}
                 ref={fileInputRef}
                 multiple={true}

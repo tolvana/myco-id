@@ -25,7 +25,14 @@ interface MainViewProps {
 
 const MainView: React.FC<MainViewProps> = ({state, setState}) => {
 
-    const classifier = useMemo(() => new ImageClassifier("model.onnx", "metadata.json"), []);
+    const publicUrl = process.env.PUBLIC_URL;
+
+    const sanePublicUrl = publicUrl.endsWith('/') ? publicUrl : `${publicUrl}/`;
+
+    const modelUrl = `${sanePublicUrl}model.onnx`;
+    const metadataUrl = `${sanePublicUrl}metadata.json`;
+
+    const classifier = useMemo(() => new ImageClassifier(modelUrl, metadataUrl), []);
 
     const theme = useTheme();
 

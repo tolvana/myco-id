@@ -21,9 +21,10 @@ export interface MainViewState {
 interface MainViewProps {
     state: Record<string, any>; // Replace Record<string, any> with the actual type of your state
     setState: React.Dispatch<React.SetStateAction<MainViewState>>;
+    setAppBarContent: React.Dispatch<React.SetStateAction<React.ReactNode>>;
 }
 
-const MainView: React.FC<MainViewProps> = ({state, setState}) => {
+const MainView: React.FC<MainViewProps> = ({state, setState, setAppBarContent}) => {
 
     const publicUrl = process.env.PUBLIC_URL;
 
@@ -40,6 +41,10 @@ const MainView: React.FC<MainViewProps> = ({state, setState}) => {
         const newValue = progress === 100 ? null : progress;
         setState((prevState) => ({...prevState, downloading: true, downloadProgress: newValue}));
     };
+
+    useEffect(() => {
+        setAppBarContent('Identify a mushroom');
+    }, [setAppBarContent]);
 
     useEffect(() => {
         const loadModel = async () => {

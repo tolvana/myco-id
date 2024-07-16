@@ -188,25 +188,15 @@ const Results: React.FC<ResultsProps> = ({results, onResultClick}) => {
                         <Grid container alignItems="center" spacing={2}>
                             <Grid item xs>
                                 <Box>
-                                    {info.common_names.eng ? (
-                                        <>
-                                            <div>
-                                                <Link variant="h6" color="inherit" component={RouterLink} to={`/details/${normalizedName}`}>
-                                                    {info.common_names['eng'][0]}
-                                                </Link>
-                                            </div>
-
-                                            <div>
-                                                <Typography variant="body2" component="span">
-                                                    {' '}
-                                                    {info.scientific_name}
-                                                </Typography>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <Typography variant="h6" component="span">
-                                            {info.scientific_name}
-                                        </Typography>
+                                    <Link variant="h6" color="inherit" component={RouterLink} to={`/details/${normalizedName}`}>
+                                        {info.scientific_name}
+                                    </Link>
+                                    {info.common_names.eng && (
+                                        <div>
+                                            <Typography variant="body1" component="span">
+                                                {info.common_names.eng[0]}
+                                            </Typography>
+                                        </div>
                                     )}
                                     <Typography variant="body2" sx={{marginTop: 1, marginBottom: 1}}>
                                         {`${(probability * 100).toFixed(1)}%`}

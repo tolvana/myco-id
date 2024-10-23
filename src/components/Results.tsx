@@ -180,8 +180,6 @@ const Results: React.FC<ResultsProps> = ({results, onResultClick}) => {
                 const gbifId = info.gbif_id;
 
                 const normalizedName = scientificName.replace(' ', '_');
-                // const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(normalizedName)}`;
-                // const gbifUrl = `https://www.gbif.org/species/${encodeURIComponent(gbifId)}`;
 
                 return (
                     <ResultEntry key={scientificName}>

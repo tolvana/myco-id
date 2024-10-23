@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {Box, IconButton} from '@mui/material';
 import {styled} from '@mui/system';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -35,12 +35,26 @@ const ImagesPreview: React.FC<ImagesPreviewProps> = ({urls, onDelete, onClick}) 
 
     const theme = useTheme();
 
+    useEffect(() => {
+        // check contents of each url
+        const check = async () => {
+        console.log(urls);
+        for (let i = 0; i < urls.length; i++) {
+            const img = await fetch(urls[i]);
+            if (!img.ok || img.headers.get("Content-Type")?.startsWith("image") === false) {
+                onDelete(i);
+            }
+        }
+        };
+        check();
+    }, [urls[0]]);
+
     return (
         <Box
             sx={{
                 display: 'grid',
-                gridTemplateColumns: `repeat(2, 1fr)`,
-                gap: 1, // Ensure equal spacing
+                gridTemplateColumns: `repeat(4, 1fr)`,
+                gap: 0.7, // Ensure equal spacing
             }}
         >
             {urls.map((url, index) => (

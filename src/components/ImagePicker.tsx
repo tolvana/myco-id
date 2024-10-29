@@ -17,6 +17,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({imageUrls, onImages}) => {
 
     const [targetIdx, setTargetIdx] = useState<number | null>(null);
     const [cameraAvailable, setCameraAvailable] = useState<boolean>(false);
+    const [captureEffect, setCaptureEffect] = useState<boolean>(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -49,6 +50,10 @@ const ImagePicker: React.FC<ImagePickerProps> = ({imageUrls, onImages}) => {
     // Capture an image from the video feed
     const captureImage = () => {
         if (canvasRef.current && videoRef.current) {
+
+            setCaptureEffect(true);
+            setTimeout(() => setCaptureEffect(false), 400);
+
             const videoWidth = videoRef.current.videoWidth;
             const videoHeight = videoRef.current.videoHeight;
             console.log("heh", videoWidth, videoHeight);
@@ -89,7 +94,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({imageUrls, onImages}) => {
 
             if (event.target.files.length > 4) {
                 toast.warn("You can only choose up to 4 images");
-            } else if (event.target.files.length == 0) {
+            } else if (event.target.files.length === 0) {
                 return;
             }
 
@@ -158,12 +163,21 @@ const ImagePicker: React.FC<ImagePickerProps> = ({imageUrls, onImages}) => {
             {cameraAvailable && (
 
                 <Box sx={{display: 'flex', justifyContent: 'center', mb: 3}}>
-                    <video ref={videoRef} autoPlay playsInline style={{width: '100%', borderRadius: 10}} />
+                    <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        style={{
+                            width: '100%',
+                            borderRadius: 10,
+                            transition: captureEffect ? 'none' : 'opacity 0.1s ease-out',
+                            opacity: captureEffect ? 0 : 1, // Toggle
+                        }} />
                 </Box>
 
             )}
 
-            <Box sx={{display: 'flex', justifyContent: 'space-between', mt: 2, width: '100%', paddingX: 4, paddingBottom: 2}}>
+            <Box sx={{display: 'flex', justifyContent: 'space-around', mt: 2, width: '100%', paddingX: 4, paddingBottom: 2}}>
 
                 {/* Remove Button */}
                 <IconButton
@@ -182,22 +196,24 @@ const ImagePicker: React.FC<ImagePickerProps> = ({imageUrls, onImages}) => {
                 </IconButton>
 
                 {/* Capture Button */}
-                <IconButton
-                    onClick={captureImage}
-                    sx={{
-                        backgroundColor: 'primary.main',
-                        color: 'white',
-                        width: '80px', // Slightly wider for better visual balance
-                        height: '80px', // Slightly taller for better visual balance
-                        borderRadius: '50%',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', // Add some shadow to the button
-                        '&:hover': {
-                            backgroundColor: 'primary.dark',
-                        },
-                    }}
-                >
-                    <PhotoCameraIcon sx={{fontSize: 32}} />
-                </IconButton>
+                {cameraAvailable && (
+                    <IconButton
+                        onClick={captureImage}
+                        sx={{
+                            backgroundColor: 'primary.main',
+                            color: 'white',
+                            width: '80px', // Slightly wider for better visual balance
+                            height: '80px', // Slightly taller for better visual balance
+                            borderRadius: '50%',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', // Add some shadow to the button
+                            '&:hover': {
+                                backgroundColor: 'primary.dark',
+                            },
+                        }}
+                    >
+                        <PhotoCameraIcon sx={{fontSize: 32}} />
+                    </IconButton>
+                )}
 
                 {/* Add File Button */}
                 <IconButton

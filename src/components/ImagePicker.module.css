@@ -102,3 +102,13 @@
     min-width: 70%; /* Set the minimum width */
     font-size: 1rem; /* Set the font size */
 }
+
+@keyframes flash {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.flash {
+    animation: flash 0.3s ease-in-out;
+}
